@@ -12,6 +12,9 @@
 #import "MWCommon.h"
 
 @implementation Menu
+{
+    UIView *_aView;
+}
 
 #pragma mark -
 #pragma mark Initialization
@@ -51,6 +54,14 @@
     // Test toolbar hiding
 //    [self setToolbarItems: @[[[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemAdd target:nil action:nil]]];
 //    [[self navigationController] setToolbarHidden:NO animated:NO];
+    
+//    self.automaticallyAdjustsScrollViewInsets = NO;
+    
+    UIImageView *aView = [[UIImageView alloc] initWithImage:[UIImage imageNamed:@"photo2"]];
+    aView.image = [UIImage imageNamed:@"photo2.jpg"];
+    aView.frame = CGRectMake(50, 100, 200, 200);
+    [self.tableView addSubview:aView];
+    _aView = aView;
 }
 
 - (void)viewWillAppear:(BOOL)animated {
@@ -180,6 +191,8 @@
             // Photos
             photo = [MWPhoto photoWithURL:[NSURL fileURLWithPath:[[NSBundle mainBundle] pathForResource:@"photo2" ofType:@"jpg"]]];
             photo.caption = @"The London Eye is a giant Ferris wheel situated on the banks of the River Thames, in London, England.";
+            photo = [MWPhoto photoWithURL:[NSURL URLWithString:@"http://pavo.elongstatic.com/i/mobile750_448/0004kBCp.jpg"]];
+//            photo = [MWPhoto photoWithImage:[UIImage imageNamed:@"photo2.jpg"]];
 			[photos addObject:photo];
             // Options
             enableGrid = NO;
@@ -1143,9 +1156,12 @@
         [self.navigationController pushViewController:browser animated:YES];
     } else {
         // Modal
-        UINavigationController *nc = [[UINavigationController alloc] initWithRootViewController:browser];
-        nc.modalTransitionStyle = UIModalTransitionStyleCrossDissolve;
-        [self presentViewController:nc animated:YES completion:nil];
+//        UINavigationController *nc = [[UINavigationController alloc] initWithRootViewController:browser];
+//        nc.modalTransitionStyle = UIModalTransitionStyleCrossDissolve;
+        
+//        [self presentViewController:nc animated:YES completion:nil];
+        [self presentViewController:browser animated:YES completion:nil];
+
     }
     
     // Release
@@ -1231,6 +1247,11 @@
     NSLog(@"Did finish modal presentation");
     [self dismissViewControllerAnimated:YES completion:nil];
 }
+
+- (UIView *)photoBrowser:(MWPhotoBrowser *)photoBrowser referenceViewAtIndex:(NSUInteger)index {
+    return _aView;
+}
+
 
 #pragma mark - Load Assets
 
