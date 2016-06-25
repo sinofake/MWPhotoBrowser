@@ -180,6 +180,7 @@ static void * MWVideoPlayerObservation = &MWVideoPlayerObservation;
         pageControl.numberOfPages = [self numberOfPhotos];
         pageControl.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleTopMargin;
         pageControl.userInteractionEnabled = NO;
+        pageControl.alpha = 0;
         _pageControl = pageControl;
         [self.view addSubview:_pageControl];
         
@@ -441,6 +442,10 @@ static void * MWVideoPlayerObservation = &MWVideoPlayerObservation;
     }
     
     _viewHasAppearedInitially = YES;
+    
+    if (!self.navigationController) {
+        _pageControl.alpha = 1;
+    }
 }
 
 - (void)viewWillDisappear:(BOOL)animated {
