@@ -21,6 +21,8 @@
 @property (nonatomic) BOOL emptyImage;
 @property (nonatomic) BOOL isVideo;
 
+@property (nonatomic, readonly) NSURL *photoURL;//用以从SDWebIamge中直接读取图片
+
 + (MWPhoto *)photoWithImage:(UIImage *)image;
 + (MWPhoto *)photoWithURL:(NSURL *)url;
 + (MWPhoto *)photoWithAsset:(PHAsset *)asset targetSize:(CGSize)targetSize;

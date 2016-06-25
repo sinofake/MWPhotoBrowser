@@ -31,4 +31,7 @@
 - (BOOL)displayingVideo;
 - (void)setImageHidden:(BOOL)hidden;
 
+- (MWTapDetectingImageView *)photoImageView;
+- (BOOL)isLoadingOrErrorStatus;
+
 @end

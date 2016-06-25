@@ -11,6 +11,7 @@
 #import <MediaPlayer/MediaPlayer.h>
 #import "MWGridViewController.h"
 #import "MWZoomingScrollView.h"
+#import "NYTPhotoTransitionController.h"
 
 // Declare private methods of browser
 @interface MWPhotoBrowser () {
@@ -72,10 +73,16 @@
     BOOL _viewHasAppearedInitially;
     CGPoint _currentGridContentOffset;
     
+    
+    UIPageControl *_pageControl;
+    
+    //transition
+    NYTPhotoTransitionController *_transitionController;
 }
 
 // Properties
 @property (nonatomic) UIActivityViewController *activityViewController;
+@property (nonatomic, readonly) UIView *referenceViewForCurrentPage;
 
 // Layout
 - (void)layoutVisiblePages;

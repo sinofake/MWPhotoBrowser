@@ -70,7 +70,7 @@
 		self.delegate = self;
 		self.showsHorizontalScrollIndicator = NO;
 		self.showsVerticalScrollIndicator = NO;
-		self.decelerationRate = UIScrollViewDecelerationRateFast;
+		//self.decelerationRate = UIScrollViewDecelerationRateFast;
 		self.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
         
     }
@@ -384,7 +384,7 @@
 - (void)handleDoubleTap:(CGPoint)touchPoint {
     
     // Dont double tap to zoom if showing a video
-    if ([self displayingVideo]) {
+    if ([self displayingVideo] || _loadingError || !_loadingIndicator.hidden) {
         return;
     }
 	
@@ -440,6 +440,14 @@
     touchX += self.contentOffset.x;
     touchY += self.contentOffset.y;
     [self handleDoubleTap:CGPointMake(touchX, touchY)];
+}
+
+- (MWTapDetectingImageView *)photoImageView {
+    return _photoImageView;
+}
+
+- (BOOL)isLoadingOrErrorStatus {
+    return !_loadingIndicator.hidden || _loadingError;
 }
 
 @end

@@ -88,7 +88,6 @@ static void * MWVideoPlayerObservation = &MWVideoPlayerObservation;
                                              selector:@selector(handleMWPhotoLoadingDidEndNotification:)
                                                  name:MWPHOTO_LOADING_DID_END_NOTIFICATION
                                                object:nil];
-    
 }
 
 - (void)dealloc {
@@ -168,6 +167,34 @@ static void * MWVideoPlayerObservation = &MWVideoPlayerObservation;
     _toolbar.barStyle = UIBarStyleBlackTranslucent;
     _toolbar.autoresizingMask = UIViewAutoresizingFlexibleTopMargin | UIViewAutoresizingFlexibleWidth;
     
+    if (!self.navigationController) {
+        _displayActionButton = NO;
+        _displayNavArrows = NO;
+        _enableGrid = NO;
+        _startOnGrid = NO;
+        _enableSwipeToDismiss = NO;
+        _alwaysShowControls = NO;
+        
+        UIPageControl *pageControl = [[UIPageControl alloc] initWithFrame:[self frameForPageControl]];
+        pageControl.hidesForSinglePage = YES;
+        pageControl.numberOfPages = [self numberOfPhotos];
+        pageControl.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleTopMargin;
+        pageControl.userInteractionEnabled = NO;
+        _pageControl = pageControl;
+        [self.view addSubview:_pageControl];
+        
+        if ([self.delegate respondsToSelector:@selector(photoBrowser:photoAtIndex:)]) {
+            MWPhoto *photo = [self.delegate photoBrowser:self photoAtIndex:_currentPageIndex];
+            UIImage *image = [[SDImageCache sharedImageCache] imageFromMemoryCacheForKey:photo.photoURL.absoluteString];
+            if (!image) {
+                image = [[SDImageCache sharedImageCache] imageFromDiskCacheForKey:photo.photoURL.absoluteString];
+            }
+            if (image) {
+                photo.underlyingImage = image;
+            }
+        }
+    }
+    
     // Toolbar Items
     if (self.displayNavArrows) {
         NSString *arrowPathFormat = @"MWPhotoBrowser.bundle/UIBarButtonItemArrow%@";
@@ -192,7 +219,28 @@ static void * MWVideoPlayerObservation = &MWVideoPlayerObservation;
     
 	// Super
     [super viewDidLoad];
-	
+    
+    if (!self.navigationController) {
+        _transitionController = [[NYTPhotoTransitionController alloc] init];
+        _transitionController.startingView = self.referenceViewForCurrentPage;
+        
+        UIView *endView;
+        MWZoomingScrollView *currPage = [self pageDisplayedAtIndex:_currentPageIndex];
+        [currPage setNeedsLayout];
+        [currPage layoutIfNeeded];
+        MWTapDetectingImageView *photoImageView = [currPage photoImageView];
+        if (!CGRectEqualToRect(photoImageView.frame, CGRectZero)) {
+            endView = photoImageView;
+        } else {
+            endView = currPage;
+        }
+        
+        _transitionController.endingView = endView;
+        
+        self.modalPresentationStyle = UIModalPresentationCustom;
+        self.transitioningDelegate = _transitionController;
+        self.modalPresentationCapturesStatusBarAppearance = YES;
+    }
 }
 
 - (void)performLayout {
@@ -355,7 +403,7 @@ static void * MWVideoPlayerObservation = &MWVideoPlayerObservation;
     [self setNavBarAppearance:animated];
     
     // Update UI
-	[self hideControlsAfterDelay];
+    [self hideControlsAfterDelay];
     
     // Initial appearance
     if (!_viewHasAppearedInitially) {
@@ -372,7 +420,10 @@ static void * MWVideoPlayerObservation = &MWVideoPlayerObservation;
     
     // Layout
     [self.view setNeedsLayout];
-
+    
+    if (!self.navigationController) {
+        [self setControlsHidden:YES animated:YES permanent:YES];
+    }
 }
 
 - (void)viewDidAppear:(BOOL)animated {
@@ -390,7 +441,6 @@ static void * MWVideoPlayerObservation = &MWVideoPlayerObservation;
     }
     
     _viewHasAppearedInitially = YES;
-        
 }
 
 - (void)viewWillDisappear:(BOOL)animated {
@@ -962,6 +1012,8 @@ static void * MWVideoPlayerObservation = &MWVideoPlayerObservation;
         if ([_delegate respondsToSelector:@selector(photoBrowser:didDisplayPhotoAtIndex:)])
             [_delegate photoBrowser:self didDisplayPhotoAtIndex:index];
         _previousPageIndex = index;
+        
+        _pageControl.currentPage = index;
     }
     
     // Update nav
@@ -1040,6 +1092,10 @@ static void * MWVideoPlayerObservation = &MWVideoPlayerObservation;
                       floorf(CGRectGetMidY(pageFrame) - playButton.frame.size.height / 2),
                       playButton.frame.size.width,
                       playButton.frame.size.height);
+}
+
+- (CGRect)frameForPageControl {
+    return CGRectMake(0, CGRectGetHeight(self.view.frame) - 40, CGRectGetWidth(self.view.frame), 40);
 }
 
 #pragma mark - UIScrollView Delegate
@@ -1504,7 +1560,11 @@ static void * MWVideoPlayerObservation = &MWVideoPlayerObservation;
 }
 
 - (UIStatusBarStyle)preferredStatusBarStyle {
-    return UIStatusBarStyleLightContent;
+    if (self.navigationController) {
+        return UIStatusBarStyleLightContent;
+    } else {
+        return UIStatusBarStyleDefault;
+    }
 }
 
 - (UIStatusBarAnimation)preferredStatusBarUpdateAnimation {
@@ -1530,7 +1590,22 @@ static void * MWVideoPlayerObservation = &MWVideoPlayerObservation;
 - (BOOL)areControlsHidden { return (_toolbar.alpha == 0); }
 - (void)hideControls { [self setControlsHidden:YES animated:YES permanent:NO]; }
 - (void)showControls { [self setControlsHidden:NO animated:YES permanent:NO]; }
-- (void)toggleControls { [self setControlsHidden:![self areControlsHidden] animated:YES permanent:NO]; }
+- (void)toggleControls {
+    if (self.navigationController) {
+        [self setControlsHidden:![self areControlsHidden] animated:YES permanent:NO];
+    } else {
+        UIView *startingView;
+        MWZoomingScrollView *currPage = [self pageDisplayedAtIndex:_currentPageIndex];
+        if ([currPage isLoadingOrErrorStatus]) {
+            startingView = currPage;
+        } else {
+            startingView = [currPage photoImageView];
+        }
+        _transitionController.startingView = startingView;
+        _transitionController.endingView = self.referenceViewForCurrentPage;
+        [self dismissViewControllerAnimated:YES completion:nil];
+    }
+}
 
 #pragma mark - Properties
 
@@ -1664,6 +1739,15 @@ static void * MWVideoPlayerObservation = &MWVideoPlayerObservation;
         [self.progressHUD hide:YES];
     }
     self.navigationController.navigationBar.userInteractionEnabled = YES;
+}
+
+#pragma mark - custom accessor
+- (UIView *)referenceViewForCurrentPage {
+    if ([self.delegate respondsToSelector:@selector(photoBrowser:referenceViewAtIndex:)]) {
+        return [self.delegate photoBrowser:self referenceViewAtIndex:_currentPageIndex];
+    }
+    
+    return nil;
 }
 
 @end
